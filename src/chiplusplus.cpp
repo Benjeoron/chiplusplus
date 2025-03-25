@@ -5,9 +5,11 @@
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
-#include "chippy.h"
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
+#include "chip8.h"
 
-void Chippy::initialize() {
+bool Chip8::initialize() {
     this -> I = 0;
     this -> pc = 0x200;
     this -> delayTimer = 0;
@@ -18,19 +20,25 @@ void Chippy::initialize() {
         memory[fontPtr + i] = font[i];
     }
     this -> drawFlag = true;
+    if (!SDL_CreateWindowAndRenderer("examples/renderer/points", 640, 320, 0, &window, &renderer)) {
+        return false;
+    }
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);  /* black, full alpha */
+    SDL_RenderClear(renderer);  /* start with a blank canvas. */
+    return true;
 }
 
-void Chippy::setKeys() {
+void Chip8::setKeys() {
 
 }
 
-void Chippy::runCycle() {
+void Chip8::runCycle() {
     for (int i = 0; i < 11; i++) {
         this -> runInstruction();
     }
 }
 
-bool Chippy::loadProgram(std::string filePath) {
+bool Chip8::loadProgram(std::string filePath) {
     std::ifstream input = std::ifstream(filePath, std::ios::binary);
     if (!input.is_open()) {
         std::cerr << "Error opening file!" << std::endl;
@@ -54,7 +62,7 @@ bool Chippy::loadProgram(std::string filePath) {
     }
 }
 
-void Chippy::runInstruction() {
+void Chip8::runInstruction() {
     this -> opcode = memory[pc] << 8 | memory[pc + 1]; //fetch
     pc += 2;
     
@@ -100,6 +108,7 @@ void Chippy::runInstruction() {
             break;
         case 0x8000:
             switch(opcode & 0x000F) {
+                unsigned char temp;
                 case 0x0000:
                     V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4];
                     break;
@@ -121,7 +130,6 @@ void Chippy::runInstruction() {
                     }
                     break;
                 case 0x0005:
-                    unsigned char temp;
                     if (V[(opcode & 0x0F00) >> 8] < V[(opcode & 0x00F0) >> 4]) {
                         temp = 0;
                     } else {
@@ -135,7 +143,6 @@ void Chippy::runInstruction() {
                     V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] >> 1;
                     break;
                 case 0x0007:
-                    unsigned char temp;
                     if (V[(opcode & 0x0F00) >> 8] > V[(opcode & 0x00F0) >> 4]) {
                         temp = 0;
                     } else {
@@ -161,11 +168,34 @@ void Chippy::runInstruction() {
         case 0xB000:
             pc = opcode - 0xB000 + V[0];
             break;
-        case 0xC000:
+        case 0xC000: {
             unsigned char base = std::rand() % (256);
+            V[(opcode & 0x0F00) >> 8] = base & (opcode & 0x00FF);
             break;
+        } 
         case 0xD000:
             //TODO
+            unsigned char x = V[(opcode & 0x0F00) >> 8] & 63;
+            unsigned char y = V[(opcode & 0x00F0) >> 4] & 31;
+            V[15] = 0;
+            for (int i = 0; i < opcode & 0x000F; i++) {
+                unsigned char sprite = memory[I + i];
+                if (y + i == 32) {
+                    break;
+                }
+                for (int j = 0; j < 8; j++) {
+                    if (x + j == 64) {
+                        break;
+                    }
+                    if (gfx[(y + i) * 64 + x + j] == 1 && (sprite & 0b10000000) == 1) {
+                        V[15] = 1;
+                        gfx[(y + i) * 64 + x + j] = 0;
+                    } else if ((sprite & 0b10000000) == 1) {
+                        gfx[(y + i) * 64 + x + j] = 1;
+                    }
+                    sprite = sprite << 1;
+                }
+            }
             drawFlag = true;
             break;
         case 0xE000:
@@ -214,11 +244,34 @@ void Chippy::runInstruction() {
 }
 
 //DEBUG
-void Chippy::printProgram() {
+void Chip8::printProgram() {
     for (int i = 0x200; i < 4096; i++) {
         std::cout << std::hex << (int) memory[i] << " ";
         if (i % 80 == 0) {
             std::cout << std::endl;
         }
     }
+}
+
+int main(int argc, char *argv[]) {
+    SDL_Init(SDL_INIT_VIDEO);
+    std::string filePath;
+    if (argc == 1) {
+        std::cerr << "No filepath or option given!";
+        SDL_Quit();
+        return 1;
+    } else {
+        if (argv[1] == "--ibm") {
+            filePath = "../lib/IBM Logo.ch8";
+        }
+        Chip8 chip8 = Chip8();
+        chip8.initialize();
+        // if (chip8.loadProgram(filePath)) {
+        //     while (true) {
+        //         chip8.runCycle();
+        //     }
+        // }
+        SDL_Quit();
+        return 0;
+    }    
 }

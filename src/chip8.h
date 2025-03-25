@@ -1,8 +1,10 @@
-#ifndef CHIPPY_H
-#define CHIPPY_H
+#ifndef CHIP8_H
+#define CHIP8_H
 #include <string>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
 
-class Chippy{
+class Chip8{
     private:
         unsigned char memory[4096] = {0};
         //0x000 to 0x1FF interpreter and fonts
@@ -13,7 +15,6 @@ class Chippy{
         unsigned short pc;
         unsigned short opcode;
         
-        unsigned char gfx[64 * 32] = {0};
         unsigned char delayTimer;
         unsigned char soundTimer;
         
@@ -39,10 +40,17 @@ class Chippy{
             0xF0, 0x80, 0xF0, 0x80, 0x80  // F
         };
 
-        void Chippy::runInstruction();
-    public:
+        unsigned char gfx[64 * 32] = {0};
         bool drawFlag;
-        void initialize();
+        SDL_Window *window = nullptr;
+        SDL_Renderer *renderer = nullptr;
+        SDL_Texture *texture = nullptr;
+        Uint64 lastTime = 0;
+
+
+        void runInstruction();
+    public:
+        bool initialize();
         void setKeys();
         bool loadProgram(std::string filePath);
         void printProgram();
