@@ -1,9 +1,10 @@
 #ifndef CHIP8_H
 #define CHIP8_H
+#define GFX_WIDTH 64
+#define GFX_HEIGHT 32
+#define PROGRAM_START 0x200
 #include <string>
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_main.h>
-
 class Chip8{
     private:
         unsigned char memory[4096] = {0};
@@ -40,21 +41,24 @@ class Chip8{
             0xF0, 0x80, 0xF0, 0x80, 0x80  // F
         };
 
+
         unsigned char gfx[64 * 32] = {0};
         bool drawFlag;
-        SDL_Window *window = nullptr;
-        SDL_Renderer *renderer = nullptr;
-        SDL_Texture *texture = nullptr;
-        Uint64 lastTime = 0;
-
 
         void runInstruction();
+
+        SDL_Window *window = nullptr;
+        SDL_Renderer *renderer = nullptr;
+        void draw();
+        int vidScale;
+        
     public:
-        bool initialize();
+        bool initialize(int vidScale, int pitch, char const* title);
         void setKeys();
         bool loadProgram(std::string filePath);
         void printProgram();
         void runCycle();
+        ~Chip8();
 };
 
 #endif

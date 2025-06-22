@@ -31,6 +31,8 @@
 *.out
 *.app
 
-#build folder
+#build folder and lib
+vendored/
 build/
 *.json
+.vscode/
