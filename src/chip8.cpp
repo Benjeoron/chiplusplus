@@ -58,7 +58,7 @@ void Chip8::setKeys() {
 }
 
 void Chip8::runCycle() {
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 11; i++) {
         this -> runInstruction();
     }
 
@@ -184,7 +184,7 @@ void Chip8::runInstruction() {
         case 0xD000: {
             unsigned char x = V[(opcode & 0x0F00) >> 8] & 63;
             unsigned char y = V[(opcode & 0x00F0) >> 4] & 31;
-            V[0xF15] = 0;
+            V[0xF] = 0;
             for (int i = 0; i < opcode & 0x000F; i++) {
                 unsigned char sprite = memory[I + i];
                 if (y + i >= 32) {
@@ -194,7 +194,7 @@ void Chip8::runInstruction() {
                     if (x + j >= 64) {
                         break;
                     }
-                    if (gfx[((y + i) * 64) + x + j] == 1 && (sprite & 0b10000000) == 0b10000000) {
+                    if ((gfx[((y + i) * 64) + x + j] == 1) && ((sprite & 0b10000000) == 0b10000000)) {
                         V[15] = 1;
                         gfx[((y + i) * 64) + x + j] = 0;
                     } else if ((sprite & 0b10000000) == 0b10000000) {
