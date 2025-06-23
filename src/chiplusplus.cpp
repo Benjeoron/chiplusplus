@@ -20,7 +20,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         filePath = argv[1];
         trim(filePath);
         if (filePath.compare("--ibm") == 0 || filePath.compare("-i") == 0) {
-            filePath = "../lib/IBM Logo.ch8";
+            filePath = "../bin/IBM Logo.ch8";
         }
 
 

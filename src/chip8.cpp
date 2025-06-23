@@ -109,7 +109,7 @@ void Chip8::runInstruction() {
     switch (opcode & 0xF000){
         case 0x0000:
             switch (opcode & 0x00FF) {
-                case 0x00E0: for (int i = 0; i < 32 * 64; i++) gfx[i] = 0; break;
+                case 0x00E0: for (int i = 0; i < sizeof(gfx); i++) gfx[i] = 0; break;
                 case 0x00EE: pc = stack[sp]; sp -= 1; break;
             } break;
         case 0x1000: pc = opcode & 0x0FFF; break;
@@ -118,7 +118,7 @@ void Chip8::runInstruction() {
         // case 0x4000: if (V[(opcode & 0x0F00) >> 8] != (opcode & 0x00FF)) pc += 2; break;
         // case 0x5000: if (V[(opcode & 0x0F00) >> 8] == V[(opcode & 0x00F0) >> 4]) pc += 2; break;
         case 0x6000: V[(opcode & 0x0F00) >> 8] = (opcode & 0x00FF); break;
-        case 0x7000: V[(opcode & 0x0F00) >> 8] += (opcode & 0x00FF); break;
+        case 0x7000: V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x0F00) >> 8] + (opcode & 0x00FF); break;
         // case 0x8000:
         //     switch(opcode & 0x000F) {
         //         unsigned short x;
@@ -185,22 +185,24 @@ void Chip8::runInstruction() {
             unsigned char x = V[(opcode & 0x0F00) >> 8] & 63;
             unsigned char y = V[(opcode & 0x00F0) >> 4] & 31;
             V[0xF] = 0;
-            for (int i = 0; i < opcode & 0x000F; i++) {
-                unsigned char sprite = memory[I + i];
-                if (y + i >= 32) {
+
+            for (int row = 0; row < opcode & 0x000F; row++) {
+                unsigned char sprite = memory[I + row];
+                if (y + row >= 32) {
                     break;
                 }
-                for (int j = 0; j < 8; j++) {
-                    if (x + j >= 64) {
+                unsigned char currPixel = 0b10000000;
+                for (int col = 0; col < 8; col++) {
+                    if (x + col >= 64) {
                         break;
                     }
-                    if ((gfx[((y + i) * 64) + x + j] == 1) && ((sprite & 0b10000000) == 0b10000000)) {
+                    if ((gfx[((y + row) * 64) + x + col] == 1) && ((sprite & currPixel) >> (7 - col)) == 1) {
                         V[15] = 1;
-                        gfx[((y + i) * 64) + x + j] = 0;
-                    } else if ((sprite & 0b10000000) == 0b10000000) {
-                        gfx[((y + i) * 64) + x + j] = 1;
+                        gfx[((y + row) * 64) + x + col] = 0;
+                    } else if (((sprite & currPixel) >> (7 - col)) == 1) {
+                        gfx[((y + row) * 64) + x + col] = 1;
                     }
-                    sprite = sprite << 1;
+                    currPixel = currPixel >> 1;
                 }
             }
             drawFlag = true;
