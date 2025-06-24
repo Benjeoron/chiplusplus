@@ -21,7 +21,9 @@ class Chip8{
         
         unsigned short stack[16] = {0};
         unsigned short sp;
-        unsigned char key[16] = {0};
+        unsigned char key_old[16] = {0};
+        unsigned char key_new[16] = {0};
+
         static constexpr unsigned char font[] = {
             0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
             0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -54,7 +56,7 @@ class Chip8{
         
     public:
         bool initialize(int vidScale, int pitch, char const* title);
-        void setKeys();
+        SDL_AppResult setKey();
         bool loadProgram(std::string filePath);
         void printProgram();
         void runCycle();
