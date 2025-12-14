@@ -5,26 +5,26 @@
 #define PROGRAM_START 0x200
 #include <string>
 #include <SDL3/SDL.h>
-class Chip8{
+class Chip8 {
     private:
-        unsigned char memory[4096] = {0};
+        uint8_t memory[4096] = {0};
         //0x000 to 0x1FF interpreter and fonts
         //0x050 to 0x0A0 4x5 pixel font set
         //0x200 to 0xFFF program and work RAM
-        unsigned char V[16] = {0};
-        unsigned short I; 
-        unsigned short pc;
-        unsigned short opcode;
+        uint8_t V[16] = {0};
+        uint16_t I; 
+        uint16_t pc;
+        uint16_t opcode;
         
-        unsigned char delayTimer;
-        unsigned char soundTimer;
+        uint8_t delayTimer;
+        uint8_t soundTimer;
         
-        unsigned short stack[16] = {0};
-        unsigned short sp;
-        unsigned char key_old[16] = {0};
-        unsigned char key_new[16] = {0};
+        uint16_t stack[16] = {0};
+        uint16_t sp;
+        uint8_t key_old[16] = {0};
+        uint8_t key_new[16] = {0};
 
-        static constexpr unsigned char font[] = {
+        static constexpr uint8_t font[] = {
             0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
             0x20, 0x60, 0x20, 0x20, 0x70, // 1
             0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -44,22 +44,22 @@ class Chip8{
         };
 
 
-        unsigned char gfx[64 * 32] = {0};
+        uint8_t gfx[64 * 32] = {0};
         bool drawFlag;
 
-        void runInstruction();
+        void RunInstruction();
 
         SDL_Window *window = nullptr;
         SDL_Renderer *renderer = nullptr;
-        void draw();
+        void Draw();
         int vidScale;
         
     public:
-        bool initialize(int vidScale, int pitch, char const* title);
-        SDL_AppResult setKey();
-        bool loadProgram(std::string filePath);
-        void printProgram();
-        void runCycle();
+        bool Initialize(int vidScale, int pitch, char const* title);
+        void SetKeys();
+        bool LoadProgram(std::string filePath);
+        void PrintProgram();
+        void RunCycle();
         ~Chip8();
 };
 

@@ -14,9 +14,7 @@
 
 Chip8 chip8 = Chip8();
 
-SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
-{   
-    // for (int i = 0; i < argc; i++) std::cout << argv[i] <<std::endl;
+SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {   
     std::string filePath;
     if (argc < 2) {
         SDL_Log("No filepath given!");
@@ -24,17 +22,13 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     } else {
         filePath = argv[1];
         boost::algorithm::trim(filePath);
-        if (filePath.compare("--ibm") == 0 || filePath.compare("-i") == 0) {
-            filePath = "../bin/IBM Logo.ch8";
-        }
 
-
-        if (!chip8.initialize(WINDOW_SCALE, 10, ("Chip-8 Emulator: " + filePath).c_str())) {
+        if (!chip8.Initialize(WINDOW_SCALE, 10, ("Chip-8 Emulator: " + filePath).c_str())) {
             SDL_Log("Error initializing emulator");
             return SDL_APP_FAILURE;
         }
 
-        if (!chip8.loadProgram(filePath)) {
+        if (!chip8.LoadProgram(filePath)) {
             SDL_Log("Filepath did not load!");
             return SDL_APP_FAILURE;
         }
@@ -44,13 +38,13 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
-{
+SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     if (event->type == SDL_EVENT_QUIT) {
         SDL_Log("%s", SDL_GetError());
         return SDL_APP_SUCCESS;  //ends program
     } else if (event->type == SDL_EVENT_KEY_UP || event->type == SDL_EVENT_KEY_DOWN) {
-        SDL_KeyboardEvent* kbEvent = &event;
+        // SDL_KeyboardEvent* kbEvent = &event;
+        return SDL_APP_SUCCESS;
     }
     return SDL_APP_CONTINUE;
 }
@@ -58,21 +52,19 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
 std::chrono::system_clock::time_point a = std::chrono::system_clock::now();
 std::chrono::system_clock::time_point b = std::chrono::system_clock::now();
 
-SDL_AppResult SDL_AppIterate(void *appstate)
-{
+SDL_AppResult SDL_AppIterate(void *appstate) {
     a = std::chrono::system_clock::now();
     auto val = a - b;
     if (((val.count()) / 1000000.0) >= (1000.0 / 60.0)) {
-        std::cout << "Time: ";
-        std::cout << ((val.count()) / 1000000.0) << "ms" <<std::endl;
-        chip8.runCycle();
+        // std::cout << "Time: ";
+        // std::cout << ((val.count()) / 1000000.0) << "ms" <<std::endl;
+        chip8.RunCycle();
         b = a;
     }
     return SDL_APP_CONTINUE;
 }
 
-void SDL_AppQuit(void *appstate, SDL_AppResult result) 
-{
+void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     SDL_Log("%s", SDL_GetError());
     SDL_Quit();
 }   
