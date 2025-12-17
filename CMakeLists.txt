@@ -9,12 +9,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
+Set(FETCHCONTENT_QUIET FALSE)
 
-add_executable(${PROJECTNAME} src/chiplusplus.cpp)
-add_library(chip8 src/chip8.cpp src/chip8.h)
-
-target_sources(${PROJECTNAME} 
-    PRIVATE PRIVATE src/chiplusplus.cpp)
-
-target_link_libraries(${PROJECTNAME} PRIVATE chip8 SDL3::SDL3)
+add_subdirectory(vendors)
+add_subdirectory(lib)
+add_subdirectory(src)
