@@ -5,7 +5,7 @@
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
-#include <SDL3\SDL.h>
+#include <SDL3/SDL.h>
 #include "chip8.h"
 
 bool Chip8::Initialize(int vidScale, int pitch, char const* title) {

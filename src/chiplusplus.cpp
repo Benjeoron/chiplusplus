@@ -8,8 +8,8 @@
 #include <chrono>
 #include <ratio>
 #include <thread>
-#include <boost\algorithm\string.hpp>
-#include "chip8.h"
+#include <boost/algorithm/string.hpp>
+#include "../lib/chip8.h"
 
 
 Chip8 chip8 = Chip8();
