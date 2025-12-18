@@ -43,7 +43,8 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
         SDL_Log("%s", SDL_GetError());
         return SDL_APP_SUCCESS;  //ends program
     } else if (event->type == SDL_EVENT_KEY_UP || event->type == SDL_EVENT_KEY_DOWN) {
-        // SDL_KeyboardEvent* kbEvent = &event;
+        SDL_KeyboardEvent* kbEvent = reinterpret_cast<SDL_KeyboardEvent*>(event);
+        chip8.SetKeys();
         return SDL_APP_SUCCESS;
     }
     return SDL_APP_CONTINUE;
