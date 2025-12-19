@@ -3,6 +3,7 @@
 #define GFX_WIDTH 64
 #define GFX_HEIGHT 32
 #define PROGRAM_START 0x200
+#define KEYPAD_SIZE 15
 #include <string>
 #include <vector>
 #include <SDL3/SDL.h>
@@ -26,7 +27,19 @@ static constexpr uint8_t font[] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
-static const std::vector<int> keypad = {
+// Provides a handy dandy conversion from the hexadecimal COSMAC VIP key index to the actual 
+// physical bindings on modern QWERTY keyboards.
+// Whereas the COSMAC VIP used the following scheme:
+// 123C
+// 456D
+// 789E
+// A0BF
+// This binding uses the following one:
+// 1234
+// QWER
+// ASDF
+// ZXCV
+static constexpr int keypad[] = {
     SDL_SCANCODE_X,
     SDL_SCANCODE_1,
     SDL_SCANCODE_2,
@@ -45,37 +58,54 @@ static const std::vector<int> keypad = {
     SDL_SCANCODE_V,
 };
 
+// Constants for byte masking
+static constexpr uint16_t kFirstNibbleMask = 0x000F;
+static constexpr uint16_t kSecondNibbleMask = 0x00F0;
+static constexpr uint16_t kThirdNibbleMask = 0x0F00;
+static constexpr uint16_t kFourthNibbleMask = 0xF000;
+static constexpr uint16_t kTwoNibbleMask = 0x00FF;
+static constexpr uint16_t kThreeNibbleMask = 0x0FFF;
+static constexpr uint8_t kU8MSB = 0x80;
+static constexpr int kU8MSBShift = 7;
 
 class Chip8 {
     private:
+        // Simulating the 4 KB of memory on most CHIP-8 implementations
+        // 0x000 to 0x1FF interpreter and fonts
+        // 0x050 to 0x0A0 4x5 pixel font set
+        // 0x200 to 0xFFF program and work RAM
         uint8_t memory[4096] = {0};
-        //0x000 to 0x1FF interpreter and fonts
-        //0x050 to 0x0A0 4x5 pixel font set
-        //0x200 to 0xFFF program and work RAM
+
+        // The 16 V registers specified for the CHIP-8 language
         uint8_t V[16] = {0};
+
+        // The I register
         uint16_t I; 
-        uint16_t pc;
-        uint16_t opcode;
         
+        // Stores the index of the next instruction in memory
+        uint16_t pc;
+
+        uint16_t stack[16] = {0};
+        uint16_t sp;
+        
+        // These two count down every visual frame, aka 60hz
         uint8_t delayTimer;
         uint8_t soundTimer;
         
-        uint16_t stack[16] = {0};
-        uint16_t sp;
-        uint8_t key_old[16] = {0};
-        uint8_t key_new[16] = {0};
+        // 
+
 
         uint8_t gfx[64 * 32] = {0};
-
+        
+        int vidScale;  // Per Google C++ guide, sometimes an int is just an int.
         SDL_Window *window = nullptr;
         SDL_Renderer *renderer = nullptr;
 
         void RunInstruction();
-        void Opcode8XXX(uint16_t opcode);
+        void Opcode8XYN(uint16_t opcode);
         void OpcodeDXYN(uint16_t opcode);
-        void OpcodeFXXX(uint16_t opcode);
+        void OpcodeFXNN(uint16_t opcode);
 
-        int vidScale;
         
     public:
         bool Initialize(int vidScale, int pitch, char const* title);
