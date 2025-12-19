@@ -4,6 +4,7 @@
 #define GFX_HEIGHT 32
 #define PROGRAM_START 0x200
 #include <string>
+#include <vector>
 #include <SDL3/SDL.h>
 
 static constexpr uint8_t font[] = {
@@ -23,6 +24,25 @@ static constexpr uint8_t font[] = {
     0xE0, 0x90, 0x90, 0x90, 0xE0, // D
     0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+};
+
+static const std::vector<int> keypad = {
+    SDL_SCANCODE_X,
+    SDL_SCANCODE_1,
+    SDL_SCANCODE_2,
+    SDL_SCANCODE_3,
+    SDL_SCANCODE_Q,
+    SDL_SCANCODE_W,
+    SDL_SCANCODE_E,
+    SDL_SCANCODE_A,
+    SDL_SCANCODE_S,
+    SDL_SCANCODE_D,
+    SDL_SCANCODE_Z,
+    SDL_SCANCODE_C,
+    SDL_SCANCODE_4,
+    SDL_SCANCODE_R,
+    SDL_SCANCODE_F,
+    SDL_SCANCODE_V,
 };
 
 
@@ -46,11 +66,9 @@ class Chip8 {
         uint8_t key_new[16] = {0};
 
         uint8_t gfx[64 * 32] = {0};
-        bool drawFlag;
 
         SDL_Window *window = nullptr;
         SDL_Renderer *renderer = nullptr;
-        void RenderScreen();
 
         void RunInstruction();
         void Opcode8XXX(uint16_t opcode);
@@ -61,10 +79,10 @@ class Chip8 {
         
     public:
         bool Initialize(int vidScale, int pitch, char const* title);
-        void SetKeys();
         bool LoadProgram(std::string filePath);
         void PrintProgram();
         void RunCycle();
+        void RenderScreen();
         ~Chip8();
 };
 

@@ -8,6 +8,8 @@
 #include <SDL3/SDL.h>
 #include "chip8.h"
 
+static bool CheckKey(int scancode);
+
 bool Chip8::Initialize(int vidScale, int pitch, char const* title) {
     this -> I = 0;
     this -> pc = PROGRAM_START;
@@ -15,7 +17,6 @@ bool Chip8::Initialize(int vidScale, int pitch, char const* title) {
     this -> soundTimer = 0;
     this -> sp = 0;
     uint8_t fontPtr = 0x050;
-    this -> drawFlag = true;
     this -> vidScale = vidScale;
     for (int i = 0; i < 80; i++) {
         memory[fontPtr + i] = font[i];
@@ -70,19 +71,6 @@ void Chip8::RenderScreen() {
     }
     
     SDL_RenderPresent(renderer);
-    drawFlag = false;
-}
-
-void Chip8::SetKeys() {
-    
-}
-
-void Chip8::RunCycle() {
-    for (int i = 0; i < 11; i++) {
-        SetKeys();
-        this -> RunInstruction();
-    }
-
     if (delayTimer > 0)	{
 		delayTimer--;
 	}
@@ -90,7 +78,10 @@ void Chip8::RunCycle() {
 	if (soundTimer > 0) {
 		soundTimer--;
 	}
-    RenderScreen();
+}
+
+void Chip8::RunCycle() {
+    this -> RunInstruction();
 }
 
 bool Chip8::LoadProgram(std::string filePath) {
@@ -131,8 +122,14 @@ void Chip8::RunInstruction() {
     switch (opcode & kFourthNibbleMask){
         case 0x0000:
             switch (opcode & kTwoNibbleMask) {
-                case 0x00E0: for (int i = 0; i < sizeof(gfx); i++) gfx[i] = 0; break;
-                case 0x00EE: sp -= 1; pc = stack[sp]; break;
+                case 0x00E0: 
+                    for (int i = 0; i < sizeof(gfx); i++) {
+                        gfx[i] = 0;
+                    } 
+                    break;
+                case 0x00EE: 
+                    sp -= 1; pc = stack[sp]; 
+                    break;
             } break;
         case 0x1000: 
             pc = (opcode & kThreeNibbleMask); 
@@ -170,7 +167,9 @@ void Chip8::RunInstruction() {
                 pc += 2;
             }
             break;
-        case 0xA000: I = opcode & kThreeNibbleMask; break;
+        case 0xA000: 
+            I = opcode & kThreeNibbleMask; 
+            break;
         case 0xB000:
             pc = opcode - 0xB000 + V[0];
             break;
@@ -184,6 +183,18 @@ void Chip8::RunInstruction() {
             break;
         }
         case 0xE000:
+            switch (opcode & kTwoNibbleMask) {
+                case 0x009E:
+                    if (CheckKey(keypad[V[(opcode & kThirdNibbleMask) >> 8]])) {
+                        pc += 2;
+                    }
+                    break;
+                case 0x00A1:
+                    if (!CheckKey(keypad[V[(opcode & kThirdNibbleMask) >> 8]])) {
+                        pc += 2;
+                    }
+                    break;
+            }
             break;
         case 0xF000:
             OpcodeFXXX(opcode);
@@ -202,14 +213,14 @@ void Chip8::Opcode8XXX(uint16_t opcode) {
             V[(opcode & kThirdNibbleMask) >> 8] |= V[(opcode & kSecondNibbleMask) >> 4];
             break; 
         case 0x0002:
-            V[(opcode & kThirdNibbleMask) >> 8] = V[(opcode & kThirdNibbleMask) >> 8] & V[(opcode & kSecondNibbleMask) >> 4];
+            V[(opcode & kThirdNibbleMask) >> 8] &= V[(opcode & kSecondNibbleMask) >> 4];
             break; 
         case 0x0003: 
-            V[(opcode & kThirdNibbleMask) >> 8] = V[(opcode & kThirdNibbleMask) >> 8] ^ V[(opcode & kSecondNibbleMask) >> 4];
+            V[(opcode & kThirdNibbleMask) >> 8] ^= V[(opcode & kSecondNibbleMask) >> 4];
             break;
         case 0x0004:
             x = V[(opcode & kThirdNibbleMask) >> 8] + V[(opcode & kSecondNibbleMask) >> 4];
-            V[(opcode & kThirdNibbleMask) >> 8] = V[(opcode & kThirdNibbleMask) >> 8] + V[(opcode & kSecondNibbleMask) >> 4];
+            V[(opcode & kThirdNibbleMask) >> 8] += V[(opcode & kSecondNibbleMask) >> 4];
             if (x > 0xFF) {
                 V[0xF] = 1;
             } else {
@@ -222,10 +233,10 @@ void Chip8::Opcode8XXX(uint16_t opcode) {
             } else if (V[(opcode & kThirdNibbleMask) >> 8] < V[(opcode & kSecondNibbleMask) >> 4]) {
                 V[0xF] = 0;
             }
-            V[(opcode & kThirdNibbleMask) >> 8] = V[(opcode & kThirdNibbleMask) >> 8] - V[(opcode & kSecondNibbleMask) >> 4];
+            V[(opcode & kThirdNibbleMask) >> 8] -= V[(opcode & kSecondNibbleMask) >> 4];
             break;
         case 0x0006: 
-            V[0xF] = V[(opcode & kSecondNibbleMask) >> 4] & 0b0000000000000001;
+            V[0xF] = V[(opcode & kSecondNibbleMask) >> 4] & 1;
             V[(opcode & kThirdNibbleMask) >> 8] = V[(opcode & kThirdNibbleMask) >> 8] >> 1;
             break;
         case 0x0007:
@@ -234,10 +245,11 @@ void Chip8::Opcode8XXX(uint16_t opcode) {
             } else if (V[(opcode & kThirdNibbleMask) >> 8] > V[(opcode & kSecondNibbleMask) >> 4]) {
                 V[0xF] = 0;
             }
-            V[(opcode & kThirdNibbleMask) >> 8] = V[(opcode & kSecondNibbleMask) >> 4] - V[(opcode & kThirdNibbleMask) >> 8];   
+            V[(opcode & kThirdNibbleMask) >> 8] = V[(opcode & kSecondNibbleMask) >> 4] 
+                                                - V[(opcode & kThirdNibbleMask) >> 8];   
             break;
         case 0x000E:
-            V[0xF] = (V[(opcode & kSecondNibbleMask) >> 4] & 0b1000000000000000) >> 15;
+            V[0xF] = (V[(opcode & kSecondNibbleMask) >> 4] & 0b1000000000000000) >> 0xF;
             V[(opcode & kThirdNibbleMask) >> 8] = V[(opcode & kThirdNibbleMask) >> 8] << 1;    
             break;
     }
@@ -245,47 +257,53 @@ void Chip8::Opcode8XXX(uint16_t opcode) {
 
 void Chip8::OpcodeDXYN(uint16_t opcode) {
     uint8_t x = V[(opcode & kThirdNibbleMask) >> 8] & 63;
-            uint8_t y = V[(opcode & kSecondNibbleMask) >> 4] & 31;
-            V[0xF] = 0;
+    uint8_t y = V[(opcode & kSecondNibbleMask) >> 4] & 31;
+    V[0xF] = 0;
 
-            for (int row = 0; row < (opcode & kFirstNibbleMask); row++) {
-                uint8_t sprite = memory[I + row];
-                if (y + row >= 32) {
-                    break;
-                }
-                uint8_t currPixel = 0b10000000;
-                for (int col = 0; col < 8; col++) {
-                    if (x + col >= 64) {
-                        break;
-                    }
-                    if ((gfx[((y + row) * 64) + x + col] == 1) && ((sprite & currPixel) >> (7 - col)) == 1) {
-                        V[15] = 1;
-                        gfx[((y + row) * 64) + x + col] = 0;
-                    } else if (((sprite & currPixel) >> (7 - col)) == 1) {
-                        gfx[((y + row) * 64) + x + col] = 1;
-                    }
-                    currPixel = currPixel >> 1;
-                }
+    for (int row = 0; row < (opcode & kFirstNibbleMask); row++) {
+        uint8_t sprite = memory[I + row];
+        if (y + row >= 32) {
+            break;
+        }
+        uint8_t currPixel = 0b10000000;
+        for (int col = 0; col < 8; col++) {
+            if (x + col >= 64) {
+                break;
             }
-            drawFlag = true;
+            if ((gfx[((y + row) * 64) + x + col] == 1) && 
+                ((sprite & currPixel) >> (7 - col)) == 1) {
+                V[15] = 1;
+                gfx[((y + row) * 64) + x + col] = 0;
+            } else if (((sprite & currPixel) >> (7 - col)) == 1) {
+                gfx[((y + row) * 64) + x + col] = 1;
+            }
+            currPixel = currPixel >> 1;
+        }
+    }
 }
 
 void Chip8::OpcodeFXXX(uint16_t opcode) {
+    bool key_pressed = false;
     switch (opcode & kTwoNibbleMask) {
         uint8_t n;
         case 0x0007:
             V[(opcode & kThirdNibbleMask) >> 8] = delayTimer;
             break;
         case 0x000A:
-            SDL_Event *event;
-            while (true) {
-                SDL_WaitEvent(event);
-                // if (event->type == SDL_EVENT_KEY_) {
-                //     break;
-                // }
+            SDL_Event event;
+            SDL_WaitEvent(&event);
+            if (event.type == SDL_EVENT_KEY_UP) {
+                for (int i = 0; i < keypad.size(); i++) {
+                    if (reinterpret_cast<SDL_KeyboardEvent*>(&event)->scancode == keypad[i]) {
+                        V[(opcode & kThirdNibbleMask) >> 8] = i;
+                        key_pressed = true;
+                        break;
+                    }
+                }
             }
-
-            V[(opcode & kThirdNibbleMask) >> 8] = 0; //KEYPRESS???
+            if (!key_pressed) {
+                pc -= 2;
+            }   
             break;
         case 0x0015:
             delayTimer = V[(opcode & kThirdNibbleMask) >> 8];
@@ -301,7 +319,9 @@ void Chip8::OpcodeFXXX(uint16_t opcode) {
             break;
         case 0x0033:
             n = V[(opcode & kThirdNibbleMask) >> 8];
-            memory[I] = (n / 100); memory[I + 1] = ((n / 10) % 10); memory[I + 2] = n % 10;
+            memory[I] = (n / 100); 
+            memory[I + 1] = ((n / 10) % 10); 
+            memory[I + 2] = n % 10;
             break;
         case 0x0055:
             for (int i = I; i <= I + ((opcode & kThirdNibbleMask) >> 8); i++) {
@@ -316,6 +336,12 @@ void Chip8::OpcodeFXXX(uint16_t opcode) {
             I += 1 + ((opcode & kThirdNibbleMask) >> 8);
             break;
     }
+}
+
+static bool CheckKey(int scancode) {
+    int numkeys;
+    const bool* keys = SDL_GetKeyboardState(&numkeys);
+    return keys[scancode];
 }
 
 Chip8::~Chip8() {
