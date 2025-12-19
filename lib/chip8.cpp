@@ -284,6 +284,7 @@ void Chip8::OpcodeDXYN(uint16_t opcode) {
 
 void Chip8::OpcodeFXXX(uint16_t opcode) {
     bool key_pressed = false;
+    bool res;
     switch (opcode & kTwoNibbleMask) {
         uint8_t n;
         case 0x0007:
@@ -291,8 +292,8 @@ void Chip8::OpcodeFXXX(uint16_t opcode) {
             break;
         case 0x000A:
             SDL_Event event;
-            SDL_WaitEvent(&event);
-            if (event.type == SDL_EVENT_KEY_UP) {
+            res = SDL_PollEvent(&event);
+            if (res && event.type == SDL_EVENT_KEY_UP) {
                 for (int i = 0; i < keypad.size(); i++) {
                     if (reinterpret_cast<SDL_KeyboardEvent*>(&event)->scancode == keypad[i]) {
                         V[(opcode & kThirdNibbleMask) >> 8] = i;
