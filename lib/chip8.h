@@ -8,6 +8,10 @@
 #include <vector>
 #include <SDL3/SDL.h>
 
+enum Chip8Mode {
+    COSMAC_VIP
+};
+
 static constexpr uint8_t font[] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -70,6 +74,8 @@ static constexpr int kU8MSBShift = 7;
 
 class Chip8 {
     private:
+        Chip8Mode mode;
+
         // Simulating the 4 KB of memory on most CHIP-8 implementations
         // 0x000 to 0x1FF interpreter and fonts
         // 0x050 to 0x0A0 4x5 pixel font set
@@ -77,7 +83,7 @@ class Chip8 {
         uint8_t memory[4096] = {0};
 
         // The 16 V registers specified for the CHIP-8 language
-        uint8_t V[16] = {0};
+        uint8_t v[16] = {0};
 
         // The I register
         uint16_t I; 
@@ -89,30 +95,44 @@ class Chip8 {
         uint16_t sp;
         
         // These two count down every visual frame, aka 60hz
-        uint8_t delayTimer;
-        uint8_t soundTimer;
-        
-        // 
+        uint8_t delay_timer;
+        uint8_t sound_timer;
 
-
+        // Represents the screen to be displayed.
         uint8_t gfx[64 * 32] = {0};
         
-        int vidScale;  // Per Google C++ guide, sometimes an int is just an int.
+        int vid_scale;  // Per Google C++ guide, sometimes an int is just an int.
+
+        // Typical SDL rendering setup
         SDL_Window *window = nullptr;
         SDL_Renderer *renderer = nullptr;
 
-        void RunInstruction();
         void Opcode8XYN(uint16_t opcode);
         void OpcodeDXYN(uint16_t opcode);
         void OpcodeFXNN(uint16_t opcode);
-
-        
     public:
+        // Stop running instructions for the current frame if this is set, then set it to be false.
+        bool draw_flag;
+
+        Chip8(Chip8Mode chip8_mode) : mode(chip8_mode) {}
+
+        // MUST be run before use.
         bool Initialize(int vidScale, int pitch, char const* title);
+
+        // Ditto as above.
         bool LoadProgram(std::string filePath);
+        // Debug function for printing the loaded program.
+
         void PrintProgram();
+        // To replicate CHIP-8 clock speeds, run at ~600hz
         void RunCycle();
+
+        // Run at 60hz
+        void UpdateTimers();
+
+        // Run at 60hz
         void RenderScreen();
+
         ~Chip8();
 };
 

@@ -1,9 +1,12 @@
 #define SDL_MAIN_USE_CALLBACKS 1
-// #define SDL_MAIN_CALLBACK_RATE 60
+#define FRAME_RATE 60
+#define FRAME_SYNC_CONSTANT 2
 #define WINDOW_SCALE 15
 #define VIDEO_PITCH 10
-#define FRAME_RATE 60
-#define CLOCK_SPEED 500
+#define INSTRUCTIONS_PER_FRAME 11
+#define MS_PER_SEC 1000.0
+#define NS_PER_MS 1000000.0
+
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <iostream>
@@ -15,7 +18,7 @@
 #include "../lib/chip8.h"
 
 
-Chip8 chip8 = Chip8();
+Chip8 chip8 = Chip8(COSMAC_VIP);
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {   
     std::string filePath;
@@ -45,7 +48,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     if (event->type == SDL_EVENT_QUIT) {
         SDL_Log("%s", SDL_GetError());
-        return SDL_APP_SUCCESS;  //ends program
+        return SDL_APP_FAILURE;  //ends program
     } else if (event->type == SDL_EVENT_KEY_UP || event->type == SDL_EVENT_KEY_DOWN) {
         SDL_KeyboardEvent* kb_event = reinterpret_cast<SDL_KeyboardEvent*>(event);
         if (kb_event->scancode == SDL_SCANCODE_ESCAPE) {
@@ -55,24 +58,28 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     return SDL_APP_CONTINUE;
 }
 
-std::chrono::system_clock::time_point a, b, c, d = std::chrono::system_clock::now();
+std::chrono::system_clock::time_point a, b = std::chrono::system_clock::now();
 
 SDL_AppResult SDL_AppIterate(void *appstate) {
-    a = c = std::chrono::system_clock::now();
-    auto cycle_diff = c - d;
-    if (((cycle_diff.count()) / 1000000.0) >= (1000.0 / CLOCK_SPEED)) {
-        chip8.RunCycle();
-        // std::cout << "Clock speed: ";
-        // std::cout << (1000.0 / ((cycle_diff.count()) / 1000000.0)) << "hz" << std::endl;
-        d = c;
-    }
-
+    a = std::chrono::system_clock::now();
     auto frame_diff = a - b;
-    if (((frame_diff.count()) / 1000000.0) >= (1000.0 / FRAME_RATE)) {
+    if (((frame_diff.count()) / NS_PER_MS) >= (MS_PER_SEC / FRAME_RATE)) {
         b = a;
         // std::cout << "Framerate: ";
         // std::cout << (1000.0 / ((frame_diff.count()) / 1000000.0)) << "hz" << std::endl;
+
+        for (int i = 0; i < INSTRUCTIONS_PER_FRAME; i++) {
+            if (chip8.draw_flag) {
+                chip8.draw_flag = false;
+                break;
+            }
+            chip8.RunCycle();
+        }
         chip8.RenderScreen();
+        chip8.UpdateTimers();
+        
+        SDL_Delay((MS_PER_SEC / FRAME_RATE) - FRAME_SYNC_CONSTANT 
+                  - ((a - std::chrono::system_clock::now()).count() / NS_PER_MS));
     }
     return SDL_APP_CONTINUE;
 }
