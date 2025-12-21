@@ -91,9 +91,13 @@ class Chip8 {
         // Stores the index of the next instruction in memory
         uint16_t pc;
 
+        // The stack. You know, the stack?
         uint16_t stack[16] = {0};
         uint16_t sp;
         
+        int curr_key = -1;
+        bool keypad_state[16] = {false};
+
         // These two count down every visual frame, aka 60hz
         uint8_t delay_timer;
         uint8_t sound_timer;
@@ -107,12 +111,26 @@ class Chip8 {
         SDL_Window *window = nullptr;
         SDL_Renderer *renderer = nullptr;
 
-        void Opcode8XYN(uint16_t opcode);
-        void OpcodeDXYN(uint16_t opcode);
-        void OpcodeFXNN(uint16_t opcode);
+        void Opcode0XXX(uint16_t opcode);
+        void Opcode1XXX(uint16_t opcode);
+        void Opcode2XXX(uint16_t opcode);
+        void Opcode3XXX(uint16_t opcode);
+        void Opcode4XXX(uint16_t opcode);
+        void Opcode5XXX(uint16_t opcode);
+        void Opcode6XXX(uint16_t opcode);
+        void Opcode7XXX(uint16_t opcode);
+        void Opcode8XXX(uint16_t opcode);
+        void Opcode9XXX(uint16_t opcode);
+        void OpcodeAXXX(uint16_t opcode);
+        void OpcodeBXXX(uint16_t opcode);
+        void OpcodeCXXX(uint16_t opcode);
+        void OpcodeDXXX(uint16_t opcode);
+        void OpcodeEXXX(uint16_t opcode);
+        void OpcodeFXXX(uint16_t opcode);
     public:
         // Stop running instructions for the current frame if this is set, then set it to be false.
         bool draw_flag;
+        bool input_blocked;
 
         Chip8(Chip8Mode chip8_mode) : mode(chip8_mode) {}
 

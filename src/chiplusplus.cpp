@@ -74,6 +74,9 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
                 break;
             }
             chip8.RunCycle();
+            if (chip8.input_blocked) {
+                break;
+            }
         }
         chip8.RenderScreen();
         chip8.UpdateTimers();
